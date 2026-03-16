@@ -29,8 +29,9 @@
     <div id="userInfo"></div>
 
     <button onclick="location.href='設定.html'">設定</button>
-    <button onclick="location.href='return.html'">返却ボックス</button>
+    <button onclick="location.href='send.html'">送信ボックス</button>
     <button id="logoutBtn">ログアウト</button>
+    
 
     <h3>お知らせ（ブログ）</h3>
     <div id="blogList"></div>
@@ -46,9 +47,9 @@
 
         // ユーザー情報表示
         document.getElementById("userInfo").innerHTML = `
-        <p><strong>${user.name}</strong> さん、こんにちは！</p>
-        <p>ID：${user.id}</p>
-      `;
+            <p><strong>${user.name}</strong> さん、こんにちは！</p>
+            <p>ID：${user.id}</p>
+          `;
 
         // 背景色の読み込み
         if (user.bgColor) {
@@ -71,10 +72,10 @@
                     const div = document.createElement("div");
                     div.className = "blog-box";
                     div.innerHTML = `
-              <strong>${item.title}</strong><br>
-              <p>${item.content}</p>
-              <small>${item.date}</small>
-            `;
+                  <strong>${item.title}</strong><br>
+                  <p>${item.content}</p>
+                  <small>${item.date}</small>
+                `;
                     area.appendChild(div);
                 });
             });
@@ -84,6 +85,12 @@
             sessionStorage.removeItem("loginUser");
             location.href = "index.html";
         });
+        if (user.role === "admin") {
+            const btn = document.createElement("button");
+            btn.textContent = "管理者ページへ";
+            btn.onclick = () => location.href = "kanrimypage.html";
+            document.body.appendChild(btn);
+        }
     </script>
 
 </body>
