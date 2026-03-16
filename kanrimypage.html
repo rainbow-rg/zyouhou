@@ -76,7 +76,7 @@
 
         // 管理者ログインチェック
         const admin = JSON.parse(sessionStorage.getItem("loginUser"));
-        if (!admin || admin.id !== "admin") {
+        if (!admin || admin.role !== "admin") {
             alert("管理者のみアクセスできます");
             location.href = "index.html";
         }
