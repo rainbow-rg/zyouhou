@@ -31,7 +31,6 @@
     <button onclick="location.href='設定.html'">設定</button>
     <button onclick="location.href='send.html'">送信ボックス</button>
     <button id="logoutBtn">ログアウト</button>
-    
 
     <h3>お知らせ（ブログ）</h3>
     <div id="blogList"></div>
@@ -39,38 +38,60 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzFiIMyjsSL_6wB0q4Ki368h23seDWZymn1QG8_M4NrWmO0qu9yWlHeAKT2P-HEKCby/exec";
 
-        // ログインチェック
-        document.getElementById("loginBtn").addEventListener("click", () => {
-            const id = document.getElementById("loginId").value;
-            const pass = document.getElementById("loginPass").value;
+        // ★ ログイン情報を取得
+        const user = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!user) {
+            location.href = "index.html";
+        }
 
-            fetch(API_URL, {
-                method: "POST",
-                body: new URLSearchParams({
-                    action: "login",
-                    id: id,
-                    pass: pass
-                })
+        // ユーザー情報表示
+        document.getElementById("userInfo").innerHTML = `
+            <p><strong>${user.name}</strong> さん</p>
+            <p>ID：${user.id}</p>
+        `;
+
+        // 背景色反映
+        if (user.bgColor) {
+            document.body.style.background = user.bgColor;
+        }
+
+        // 管理者なら管理者ページボタンを追加
+        if (user.role === "admin") {
+            const btn = document.createElement("button");
+            btn.textContent = "管理者ページへ";
+            btn.onclick = () => location.href = "kanrimypage.html";
+            document.body.insertBefore(btn, document.getElementById("logoutBtn"));
+        }
+
+        // ブログ一覧取得
+        fetch(API_URL, {
+            method: "POST",
+            body: new URLSearchParams({
+                action: "getBlogList"
             })
-                .then(res => res.json())
-                .then(result => {
-                    if (!result.ok) {
-                        alert(result.message);
-                        return;
-                    }
+        })
+            .then(res => res.json())
+            .then(list => {
+                const area = document.getElementById("blogList");
+                area.innerHTML = "";
 
-                    // ログイン情報を保存
-                    sessionStorage.setItem("loginUser", JSON.stringify(result));
-
-                    // ★ role によって遷移先を変える
-                    if (result.role === "admin") {
-                        location.href = "kanrimypage.html";
-                    } else {
-                        location.href = "mypage.html";
-                    }
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "blog-box";
+                    div.innerHTML = `
+                        <strong>${item.title}</strong><br>
+                        <p>${item.content}</p>
+                        <small>${item.date}</small>
+                    `;
+                    area.appendChild(div);
                 });
-        });
+            });
 
+        // ログアウト
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            sessionStorage.removeItem("loginUser");
+            location.href = "index.html";
+        });
     </script>
 
 </body>
