@@ -1,79 +1,89 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <title>マイページ</title>
     <style>
         body {
             font-family: sans-serif;
+            padding: 20px;
+            transition: background 0.3s;
         }
 
-        header {
-            background: #eee;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .blog-item {
+        .blog-box {
             border: 1px solid #ccc;
             padding: 10px;
             margin: 10px 0;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div id="userID"></div>
-        <div>
-            <button onclick="location.href='?page=return'">返却ボックス</button>
-            <button onclick="location.href='?page=setting'">設定</button>
-            <button onclick="logout()">ログアウト</button>
-        </div>
-    </header>
+    <h2>マイページ</h2>
 
-    <h2>管理者からのお知らせ</h2>
-    <div id="blogArea"></div>
+    <div id="userInfo"></div>
+
+    <button onclick="location.href='設定.html'">設定</button>
+    <button onclick="location.href='return.html'">返却ボックス</button>
+    <button id="logoutBtn">ログアウト</button>
+
+    <h3>お知らせ（ブログ）</h3>
+    <div id="blogList"></div>
 
     <script>
-  // ログイン情報を sessionStorage から取得
-  const user = JSON.parse(sessionStorage.getItem("loginUser"));
-  if (!user) {
-    location.href = "?page=index";
-  }
+        const API_URL = "https://script.google.com/macros/s/AKfycbzXdgO7mtCajSvAyDdUO0nKshl_8rhJziCIM8oVsjgVDu0v3hJ2MHARo-c-BYyq6U3jig/exec";
 
-  document.getElementById("userID").textContent = "ID: " + user.id;
+        // ログインチェック
+        const user = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!user) {
+            location.href = "index.html";
+        }
 
-  // 背景色を適用
-  google.script.run
-    .withSuccessHandler(setting => {
-      document.body.style.background = setting.bgcolor;
-    })
-    .getUserSetting(user.id);
+        // ユーザー情報表示
+        document.getElementById("userInfo").innerHTML = `
+        <p><strong>${user.name}</strong> さん、こんにちは！</p>
+        <p>ID：${user.id}</p>
+      `;
 
-  // ブログ一覧を取得
-  google.script.run
-    .withSuccessHandler(list => {
-      const area = document.getElementById("blogArea");
-      list.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "blog-item";
-        div.innerHTML = `
-          <h3>${item.title}</h3>
-          <p>${item.content}</p>
-          <small>${item.date}</small>
-        `;
-        area.appendChild(div);
-      });
-    })
-    .getBlogList();
+        // 背景色の読み込み
+        if (user.bgColor) {
+            document.body.style.background = user.bgColor;
+        }
 
-  function logout() {
-    sessionStorage.clear();
-    location.href = "?page=index";
-  }
+        // ブログ一覧取得
+        fetch(API_URL, {
+            method: "POST",
+            body: new URLSearchParams({
+                action: "getBlogList"
+            })
+        })
+            .then(res => res.json())
+            .then(list => {
+                const area = document.getElementById("blogList");
+                area.innerHTML = "";
+
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "blog-box";
+                    div.innerHTML = `
+              <strong>${item.title}</strong><br>
+              <p>${item.content}</p>
+              <small>${item.date}</small>
+            `;
+                    area.appendChild(div);
+                });
+            });
+
+        // ログアウト
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            sessionStorage.removeItem("loginUser");
+            location.href = "index.html";
+        });
     </script>
 
 </body>

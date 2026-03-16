@@ -1,65 +1,62 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <title>ログイン</title>
     <style>
         body {
             font-family: sans-serif;
+            padding: 20px;
         }
 
-        .error {
-            color: red;
-            margin-top: 8px;
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 200px;
+        }
+
+        button {
+            padding: 8px 15px;
         }
     </style>
 </head>
 <body>
-    <h1>情報Ⅰ　勉強用サイト</h1>
 
-    <div>ID：<input id="loginID"></div>
-    <div>パスワード：<input id="loginPass" type="password"></div>
-    <div><button id="loginBtn">ログイン</button></div>
-    <div class="touroku"><a href="?page=register">新規登録はこちら</a></div>
-    <div id="loginError" class="error"></div>
+    <h2>ログイン</h2>
+
+    <input id="loginId" placeholder="ユーザーID">
+    <input id="loginPass" type="password" placeholder="パスワード">
+    <button id="loginBtn">ログイン</button>
+
+    <p><a href="register.html">新規登録はこちら</a></p>
 
     <script>
-    const idInput = document.getElementById('loginID');
-    const passInput = document.getElementById('loginPass');
-    const errorBox = document.getElementById('loginError');
+        const API_URL = "https://script.google.com/macros/s/AKfycbzXdgO7mtCajSvAyDdUO0nKshl_8rhJziCIM8oVsjgVDu0v3hJ2MHARo-c-BYyq6U3jig/exec";
 
-    // IDでEnter → パスへ
-    idInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        passInput.focus();
-      }
-    });
+        document.getElementById("loginBtn").addEventListener("click", () => {
+            const id = document.getElementById("loginId").value;
+            const pass = document.getElementById("loginPass").value;
 
-    // パスでEnter → ログイン
-    passInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        document.getElementById('loginBtn').click();
-      }
-    });
-
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      const id = idInput.value.trim();
-      const pass = passInput.value;
-
-      errorBox.textContent = '';
-
-      google.script.run
-        .withSuccessHandler(result => {
-          if (result.ok) {
-            alert('ログイン成功！');
-            // とりあえず次フェーズ用に mypage へ
-            location.href = '?page=mypage';
-          } else {
-            errorBox.textContent = result.message || 'ログインに失敗しました';
-          }
-        })
-        .loginUser(id, pass);
-    });
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "login",
+                    id: id,
+                    pass: pass
+                })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.ok) {
+                        sessionStorage.setItem("loginUser", JSON.stringify(result));
+                        location.href = "mypage.html";
+                    } else {
+                        alert(result.message);
+                    }
+                });
+        });
     </script>
+
 </body>
 </html>

@@ -1,66 +1,69 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <title>新規登録</title>
     <style>
         body {
             font-family: sans-serif;
+            padding: 20px;
         }
 
-        .error {
-            color: red;
-            margin-top: 8px;
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 250px;
+        }
+
+        button {
+            padding: 8px 15px;
         }
     </style>
 </head>
 <body>
-    <div class="return"><a href="?page=index">←戻る</a></div>
 
-    <div>氏名<br><input name="name"></div>
-    <div>メールアドレス<br><input name="mail"></div>
-    <div>ユーザID<br><input name="id" inputmode="numeric"></div>
-    <div>パスワード<br><input name="pass" type="password"></div>
-    <div>パスワード確認用<br><input name="pass2" type="password"></div>
+    <h2>新規登録</h2>
 
-    <button id="regBtn">登録</button>
-    <div id="regError" class="error"></div>
+    <input id="name" placeholder="名前">
+    <input id="mail" placeholder="メールアドレス">
+    <input id="id" placeholder="ユーザーID">
+    <input id="pass" type="password" placeholder="パスワード">
+
+    <button id="registerBtn">登録</button>
+
+    <p><a href="index.html">ログインページへ戻る</a></p>
 
     <script>
-    const nameInput = document.querySelector("input[name='name']");
-    const mailInput = document.querySelector("input[name='mail']");
-    const idInput = document.querySelector("input[name='id']");
-    const passInput = document.querySelector("input[name='pass']");
-    const pass2Input = document.querySelector("input[name='pass2']");
-    const errorBox = document.getElementById('regError');
+        const API_URL = "https://script.google.com/macros/s/AKfycbzXdgO7mtCajSvAyDdUO0nKshl_8rhJziCIM8oVsjgVDu0v3hJ2MHARo-c-BYyq6U3jig/exec";
 
-    document.getElementById('regBtn').addEventListener('click', () => {
-      const data = {
-        name: nameInput.value.trim(),
-        mail: mailInput.value.trim(),
-        id: idInput.value.trim(),
-        pass: passInput.value,
-        pass2: pass2Input.value
-      };
+        document.getElementById("registerBtn").addEventListener("click", () => {
+            const name = document.getElementById("name").value;
+            const mail = document.getElementById("mail").value;
+            const id = document.getElementById("id").value;
+            const pass = document.getElementById("pass").value;
 
-      errorBox.textContent = '';
-
-      if (data.pass !== data.pass2) {
-        errorBox.textContent = 'パスワードが一致しません';
-        return;
-      }
-
-      google.script.run
-        .withSuccessHandler(result => {
-          if (result.ok) {
-            alert('登録完了！');
-            location.href = '?page=index';
-          } else {
-            errorBox.textContent = result.message || '登録に失敗しました';
-          }
-        })
-        .registerUser(data);
-    });
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "register",
+                    name: name,
+                    mail: mail,
+                    id: id,
+                    pass: pass
+                })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.ok) {
+                        alert("登録が完了しました！");
+                        location.href = "index.html";
+                    } else {
+                        alert(result.message);
+                    }
+                });
+        });
     </script>
+
 </body>
 </html>

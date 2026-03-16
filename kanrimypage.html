@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <title>管理者ページ</title>
     <style>
         body {
@@ -11,8 +11,19 @@
 
         .box {
             border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 20px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        input, textarea, select {
+            margin: 5px 0;
+            padding: 8px;
+            width: 250px;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -20,138 +31,170 @@
 
     <h2>管理者ページ</h2>
 
-    <button onclick="location.href='?page=index'">ログアウト</button>
+    <div id="adminInfo"></div>
 
+    <hr>
+
+    <h3>ブログ投稿</h3>
     <div class="box">
-        <h3>ブログ投稿</h3>
-        <input id="blogTitle" placeholder="タイトル"><br><br>
-        <textarea id="blogContent" placeholder="内容" rows="5" cols="40"></textarea><br><br>
+        <input id="blogTitle" placeholder="タイトル">
+        <textarea id="blogContent" rows="4" placeholder="内容"></textarea>
         <button id="postBlogBtn">投稿</button>
         <div id="blogMsg"></div>
     </div>
 
-    <div class="box">
-        <h3>ユーザーの返却ファイル一覧</h3>
-        <div id="returnList"></div>
-    </div>
+    <hr>
 
-    <div class="box">
-        <h3>ユーザーへ返却ファイルを送信</h3>
+    <h3>ユーザー一覧</h3>
+    <div id="userList"></div>
 
+    <hr>
+
+    <h3>返却ファイル一覧（ユーザー → 管理者）</h3>
+    <div id="returnList"></div>
+
+    <hr>
+
+    <h3>管理者 → ユーザーへ返却ファイル送信</h3>
+    <div class="box">
         <label>送り先ユーザー：</label>
-        <select id="userSelect"></select><br><br>
+        <select id="userSelect"></select><br>
 
         <input type="file" id="adminFileInput">
         <button id="adminUploadBtn">送信</button>
         <div id="adminUploadMsg"></div>
     </div>
-    <div class="box">
-        <h3>ユーザーへ返却ファイルを送信</h3>
 
-        <label>送り先ユーザー：</label>
-        <select id="userSelect"></select><br><br>
-
-        <input type="file" id="adminFileInput">
-        <button id="adminUploadBtn">送信</button>
-        <div id="adminUploadMsg"></div>
-    </div>
+    <button onclick="location.href='index.html'">ログアウト</button>
 
     <script>
-  const user = JSON.parse(sessionStorage.getItem("loginUser"));
-  if (!user || user.role !== "admin") {
-    location.href = "?page=index";
-  }
+        const API_URL = "https://script.google.com/macros/s/AKfycbzXdgO7mtCajSvAyDdUO0nKshl_8rhJziCIM8oVsjgVDu0v3hJ2MHARo-c-BYyq6U3jig/exec";
 
-  const CLOUD_NAME = "dnwfurr5m";
-  const UPLOAD_PRESET = "zyouhou";
+        // ★ Cloudinary の設定（あなたの値に書き換えてね）
+        const CLOUD_NAME = "dnwfurr5m";
+        const UPLOAD_PRESET = "zyouhou";
 
-  // ブログ投稿
-  document.getElementById("postBlogBtn").addEventListener("click", () => {
-    const title = document.getElementById("blogTitle").value;
-    const content = document.getElementById("blogContent").value;
+        // 管理者ログインチェック
+        const admin = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!admin || admin.id !== "admin") {
+            alert("管理者のみアクセスできます");
+            location.href = "index.html";
+        }
 
-    google.script.run
-      .withSuccessHandler(() => {
-        document.getElementById("blogMsg").textContent = "投稿しました！";
-      })
-      .postBlog(title, content);
-  });
-
-  // ユーザー一覧を取得
-  google.script.run
-    .withSuccessHandler(list => {
-      const select = document.getElementById("userSelect");
-      list.forEach(u => {
-        const opt = document.createElement("option");
-        opt.value = u.id;
-        opt.textContent = `${u.id} (${u.name})`;
-        select.appendChild(opt);
-      });
-    })
-    .getUserList();
-
-  // 管理者 → ユーザー返却ファイル送信
-  document.getElementById("adminUploadBtn").addEventListener("click", async () => {
-    const file = document.getElementById("adminFileInput").files[0];
-    const userId = document.getElementById("userSelect").value;
-    const msg = document.getElementById("adminUploadMsg");
-
-    if (!file) {
-      msg.textContent = "ファイルを選択してください。";
-      return;
-    }
-
-    msg.textContent = "アップロード中…";
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-      method: "POST",
-      body: formData
-    });
-
-    const json = await res.json();
-    const fileUrl = json.secure_url;
-
-    google.script.run
-      .withSuccessHandler(() => {
-        msg.textContent = "送信しました！";
-      })
-      .adminReturnFile(userId, fileUrl);
-  });
-  // 返却ファイル一覧を取得して表示
-google.script.run
-  .withSuccessHandler(list => {
-    const area = document.getElementById("returnList");
-
-    list.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "box";
-      div.innerHTML = `
-        <strong>ユーザーID：</strong> ${item.user_id}<br>
-        <strong>ユーザー → 管理者：</strong>
-          ${item.user_to_admin ? `<a href="${item.user_to_admin}" target="_blank">ファイルを見る</a>` : "なし"}<br>
-        <strong>管理者 → ユーザー：</strong>
-          ${item.admin_to_user ? `<a href="${item.admin_to_user}" target="_blank">返却ファイル</a>` : "未返却"}<br>
-        <strong>更新日時：</strong> ${item.updated_at}
+        document.getElementById("adminInfo").innerHTML = `
+        <p>管理者：<strong>${admin.name}</strong></p>
       `;
-      area.appendChild(div);
-    });
-  })
-  .getReturnList();
-  google.script.run
-  .withSuccessHandler(list => {
-    const select = document.getElementById("userSelect");
-    list.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = `${u.id} (${u.name})`;
-      select.appendChild(opt);
-    });
-  })
-  .getUserList();
+
+        // ブログ投稿
+        document.getElementById("postBlogBtn").addEventListener("click", () => {
+            const title = document.getElementById("blogTitle").value;
+            const content = document.getElementById("blogContent").value;
+
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "postBlog",
+                    title: title,
+                    content: content
+                })
+            })
+                .then(res => res.json())
+                .then(() => {
+                    document.getElementById("blogMsg").textContent = "投稿しました！";
+                });
+        });
+
+        // ユーザー一覧取得
+        fetch(API_URL, {
+            method: "POST",
+            body: new URLSearchParams({ action: "getUserList" })
+        })
+            .then(res => res.json())
+            .then(list => {
+                const area = document.getElementById("userList");
+                const select = document.getElementById("userSelect");
+
+                list.forEach(u => {
+                    const div = document.createElement("div");
+                    div.className = "box";
+                    div.innerHTML = `
+              <strong>ID：</strong> ${u.id}<br>
+              <strong>名前：</strong> ${u.name}<br>
+              <strong>メール：</strong> ${u.mail}
+            `;
+                    area.appendChild(div);
+
+                    const opt = document.createElement("option");
+                    opt.value = u.id;
+                    opt.textContent = `${u.id} (${u.name})`;
+                    select.appendChild(opt);
+                });
+            });
+
+        // 返却ファイル一覧取得
+        fetch(API_URL, {
+            method: "POST",
+            body: new URLSearchParams({ action: "getReturnList" })
+        })
+            .then(res => res.json())
+            .then(list => {
+                const area = document.getElementById("returnList");
+
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "box";
+                    div.innerHTML = `
+              <strong>ユーザーID：</strong> ${item.user_id}<br>
+              <strong>ユーザー → 管理者：</strong>
+              ${item.user_to_admin ? `<a href="${item.user_to_admin}" target="_blank">ファイルを見る</a>` : "なし"}<br>
+              <strong>管理者 → ユーザー：</strong>
+              ${item.admin_to_user ? `<a href="${item.admin_to_user}" target="_blank">返却ファイル</a>` : "未返却"}<br>
+              <small>${item.updated_at}</small>
+            `;
+                    area.appendChild(div);
+                });
+            });
+
+        // 管理者 → ユーザー返却ファイル送信
+        document.getElementById("adminUploadBtn").addEventListener("click", async () => {
+            const file = document.getElementById("adminFileInput").files[0];
+            const userId = document.getElementById("userSelect").value;
+            const msg = document.getElementById("adminUploadMsg");
+
+            if (!file) {
+                msg.textContent = "ファイルを選択してください。";
+                return;
+            }
+
+            msg.textContent = "アップロード中…";
+
+            // Cloudinary アップロード
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", UPLOAD_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                method: "POST",
+                body: formData
+            });
+
+            const json = await res.json();
+            const fileUrl = json.secure_url;
+
+            // GAS に保存
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "adminReturnFile",
+                    userId: userId,
+                    fileUrl: fileUrl
+                })
+            })
+                .then(res => res.json())
+                .then(() => {
+                    msg.textContent = "送信しました！";
+                });
+        });
     </script>
 
 </body>
