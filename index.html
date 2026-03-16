@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 200px;
+        }
+
+        button {
+            padding: 8px 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>ログイン</h2>
+
+    <input id="loginId" placeholder="ユーザーID">
+    <input id="loginPass" type="password" placeholder="パスワード">
+    <button id="loginBtn">ログイン</button>
+
+    <p><a href="register.html">新規登録はこちら</a></p>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzFiIMyjsSL_6wB0q4Ki368h23seDWZymn1QG8_M4NrWmO0qu9yWlHeAKT2P-HEKCby/exec";
+
+        document.getElementById("loginBtn").addEventListener("click", () => {
+            const id = document.getElementById("loginId").value;
+            const pass = document.getElementById("loginPass").value;
+
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "login",
+                    id: id,
+                    pass: pass
+                })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (!result.ok) {
+                        alert(result.message);
+                        return;
+                    }
+
+                    // ログイン情報を保存
+                    sessionStorage.setItem("loginUser", JSON.stringify(result));
+
+                    // 管理者なら管理者ページへ
+                    if (result.role === "admin") {
+                        location.href = "kanrimypage.html";
+                    } else {
+                        location.href = "mypage.html";
+                    }
+                });
+        });
+    </script>
+
+</body>
+</html>
