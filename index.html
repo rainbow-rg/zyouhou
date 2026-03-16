@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <title>ログイン</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .error {
+            color: red;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>情報Ⅰ　勉強用サイト</h1>
+
+    <div>ID：<input id="loginID"></div>
+    <div>パスワード：<input id="loginPass" type="password"></div>
+    <div><button id="loginBtn">ログイン</button></div>
+    <div class="touroku"><a href="?page=register">新規登録はこちら</a></div>
+    <div id="loginError" class="error"></div>
+
+    <script>
+    const idInput = document.getElementById('loginID');
+    const passInput = document.getElementById('loginPass');
+    const errorBox = document.getElementById('loginError');
+
+    // IDでEnter → パスへ
+    idInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        passInput.focus();
+      }
+    });
+
+    // パスでEnter → ログイン
+    passInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        document.getElementById('loginBtn').click();
+      }
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const id = idInput.value.trim();
+      const pass = passInput.value;
+
+      errorBox.textContent = '';
+
+      google.script.run
+        .withSuccessHandler(result => {
+          if (result.ok) {
+            alert('ログイン成功！');
+            // とりあえず次フェーズ用に mypage へ
+            location.href = '?page=mypage';
+          } else {
+            errorBox.textContent = result.message || 'ログインに失敗しました';
+          }
+        })
+        .loginUser(id, pass);
+    });
+    </script>
+</body>
+</html>

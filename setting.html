@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <title>設定</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .container {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>設定</h2>
+
+        <label>背景色を選択：</label>
+        <input type="color" id="bgColorPicker">
+
+        <br><br>
+        <button id="saveBtn">保存</button>
+        <button onclick="location.href='?page=mypage'">戻る</button>
+
+        <div id="msg" style="margin-top:10px; color:green;"></div>
+    </div>
+
+    <script>
+  const user = JSON.parse(sessionStorage.getItem("loginUser"));
+  if (!user) {
+    location.href = "?page=index";
+  }
+
+  const picker = document.getElementById("bgColorPicker");
+  const msg = document.getElementById("msg");
+
+  // 現在の背景色を読み込む
+  google.script.run
+    .withSuccessHandler(setting => {
+      picker.value = setting.bgcolor || "#ffffff";
+    })
+    .getUserSetting(user.id);
+
+  // 保存処理
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    const color = picker.value;
+
+    google.script.run
+      .withSuccessHandler(result => {
+        if (result.ok) {
+          msg.textContent = "保存しました！";
+          setTimeout(() => {
+            location.href = "?page=mypage";
+          }, 800);
+        } else {
+          msg.style.color = "red";
+          msg.textContent = result.message;
+        }
+      })
+      .saveUserSetting(user.id, color);
+  });
+    </script>
+
+</body>
+</html>

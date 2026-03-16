@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <title>マイページ</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        header {
+            background: #eee;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .blog-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div id="userID"></div>
+        <div>
+            <button onclick="location.href='?page=return'">返却ボックス</button>
+            <button onclick="location.href='?page=setting'">設定</button>
+            <button onclick="logout()">ログアウト</button>
+        </div>
+    </header>
+
+    <h2>管理者からのお知らせ</h2>
+    <div id="blogArea"></div>
+
+    <script>
+  // ログイン情報を sessionStorage から取得
+  const user = JSON.parse(sessionStorage.getItem("loginUser"));
+  if (!user) {
+    location.href = "?page=index";
+  }
+
+  document.getElementById("userID").textContent = "ID: " + user.id;
+
+  // 背景色を適用
+  google.script.run
+    .withSuccessHandler(setting => {
+      document.body.style.background = setting.bgcolor;
+    })
+    .getUserSetting(user.id);
+
+  // ブログ一覧を取得
+  google.script.run
+    .withSuccessHandler(list => {
+      const area = document.getElementById("blogArea");
+      list.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "blog-item";
+        div.innerHTML = `
+          <h3>${item.title}</h3>
+          <p>${item.content}</p>
+          <small>${item.date}</small>
+        `;
+        area.appendChild(div);
+      });
+    })
+    .getBlogList();
+
+  function logout() {
+    sessionStorage.clear();
+    location.href = "?page=index";
+  }
+    </script>
+
+</body>
+</html>
