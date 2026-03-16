@@ -76,10 +76,10 @@
 
         // 管理者ログインチェック
         const admin = JSON.parse(sessionStorage.getItem("loginUser"));
-        if (!admin || admin.role !== "admin") {
-            alert("管理者のみアクセスできます");
-            location.href = "index.html";
-        }
+if (!admin || admin.role !== "admin") {
+    alert("管理者のみアクセスできます");
+    location.href = "index.html";
+}
 
         document.getElementById("adminInfo").innerHTML = `
         <p>管理者：<strong>${admin.name}</strong></p>
