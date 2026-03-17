@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>マイページ</title>
+
     <style>
         body {
             font-family: sans-serif;
@@ -10,15 +11,22 @@
             transition: background 0.3s;
         }
 
-        .blog-box {
+        .blog-box, .return-box {
             border: 1px solid #ccc;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 6px;
+            background: #fafafa;
         }
 
         button {
             padding: 8px 15px;
             margin-top: 10px;
+        }
+
+        .file-link {
+            display: block;
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -35,27 +43,28 @@
     <h3>お知らせ（ブログ）</h3>
     <div id="blogList"></div>
 
+    <h3>返却ボックス</h3>
+    <div id="returnBox"></div>
+
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzGlBULbnFOjgktgaAXLdvtCrSokfeLoD_ToU8M7xnwgKduEkFng6Eqs-tRQ7h-JmCiLw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby4-6hhp06yWlhnEHVJVakubswm9_fVFzGiCvRMH2c-SqsBQIZuU1XjEgH6eCAU5q9A9Q/exec";
 
-        // ★ ログイン情報を取得
+        // ★ ログイン情報
         const user = JSON.parse(sessionStorage.getItem("loginUser"));
-        if (!user) {
-            location.href = "index.html";
-        }
+        if (!user) location.href = "index.html";
 
-        // ユーザー情報表示
+        // ユーザー情報
         document.getElementById("userInfo").innerHTML = `
-        <p><strong>${user.name}</strong> さん</p>
-        <p>ID：${user.id}</p>
-    `;
+            <p><strong>${user.name}</strong> さん</p>
+            <p>ID：${user.id}</p>
+        `;
 
-        // 背景色反映
+        // 背景色
         if (user.bgColor) {
             document.body.style.background = user.bgColor;
         }
 
-        // 管理者なら管理者ページボタンを追加
+        // 管理者ボタン
         if (user.role === "admin") {
             const btn = document.createElement("button");
             btn.textContent = "管理者ページへ";
@@ -63,12 +72,20 @@
             document.body.insertBefore(btn, document.getElementById("logoutBtn"));
         }
 
-        // ブログ一覧取得
+        // ★ URL をリンク化
+        function linkify(text) {
+            const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
+            return text.replace(urlPattern, function (url) {
+                let href = url;
+                if (!href.startsWith("http")) href = "http://" + href;
+                return `<a href="${href}" target="_blank">${url}</a>`;
+            });
+        }
+
+        // ★ ブログ一覧
         fetch(API_URL, {
             method: "POST",
-            body: new URLSearchParams({
-                action: "getBlogList"
-            })
+            body: new URLSearchParams({ action: "getBlogList" })
         })
             .then(res => res.json())
             .then(list => {
@@ -80,9 +97,47 @@
                     div.className = "blog-box";
                     div.innerHTML = `
                     <strong>${item.title}</strong><br>
-                    <p>${item.content}</p>
-                    <small>${item.date}</small>
+                    <p>${linkify(item.content)}</p>
+                    <small>${item.date}</small><br>
+                    <button onclick="replyBlog('${item.index}')">返信する</button>
                 `;
+                    area.appendChild(div);
+                });
+            });
+
+        // ★ 返信ページへ
+        function replyBlog(index) {
+            sessionStorage.setItem("replyBlogIndex", index);
+            location.href = "reply.html";
+        }
+
+        // ★ 返却ボックス
+        fetch(API_URL, {
+            method: "POST",
+            body: new URLSearchParams({
+                action: "getReturnBox",
+                id: user.id
+            })
+        })
+            .then(res => res.json())
+            .then(list => {
+                const area = document.getElementById("returnBox");
+                area.innerHTML = "";
+
+                list.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "return-box";
+
+                    div.innerHTML = `
+                    <strong>送信ファイル：</strong>
+                    ${item.user_to_admin ? `<a class="file-link" href="${item.user_to_admin}" target="_blank">開く</a>` : "なし"}<br>
+
+                    <strong>返却ファイル：</strong>
+                    ${item.admin_to_user ? `<a class="file-link" href="${item.admin_to_user}" target="_blank">開く</a>` : "なし"}<br>
+
+                    <strong>返信日時：</strong> ${item.updated_at}<br>
+                `;
+
                     area.appendChild(div);
                 });
             });
