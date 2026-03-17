@@ -141,7 +141,7 @@
     </div>
 
     <script>
-        const API_URL = "YOUR_GAS_URL";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzFiIMyjsSL_6wB0q4Ki368h23seDWZymn1QG8_M4NrWmO0qu9yWlHeAKT2P-HEKCby/exec";
         const CLOUD_NAME = "dnwfurr5m";
         const UPLOAD_PRESET = "zyouhou";
 
@@ -277,7 +277,7 @@
             formData.append("file", file);
             formData.append("upload_preset", UPLOAD_PRESET);
 
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${dnwfurr5m}/upload`, {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
                 method: "POST",
                 body: formData
             });
@@ -301,7 +301,20 @@
                     document.getElementById("adminFileInput").value = "";
                 });
         });
+        const postBtn = document.getElementById("postBlogBtn");
+        postBtn.addEventListener("mousedown", () => {
+            postBtn.style.background = "#2980b9";
+        });
+        postBtn.addEventListener("mouseup", () => {
+            postBtn.style.background = "#3498db";
+        });
+        postBtn.disabled = true;
+        postBtn.textContent = "投稿中…";
 
+        setTimeout(() => {
+            postBtn.disabled = false;
+            postBtn.textContent = "投稿";
+        }, 1000);
     </script>
 
 </body>
