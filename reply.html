@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ブログ返信</title>
+    <title>返信フォーム</title>
 
     <style>
         body {
@@ -10,154 +10,91 @@
             padding: 20px;
         }
 
-        .box {
-            border: 1px solid #ccc;
+        .section {
+            background: #f5f5f5;
             padding: 15px;
-            border-radius: 6px;
-            background: #fafafa;
             margin-bottom: 20px;
+            border-radius: 8px;
         }
 
-        input, textarea {
+        textarea {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            height: 120px;
         }
 
         button {
-            padding: 10px 18px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 8px 15px;
         }
 
         .msg {
             margin-top: 10px;
             color: green;
-            font-weight: bold;
-        }
-
-        .file-link {
-            display: block;
-            margin: 5px 0;
         }
     </style>
 </head>
 <body>
 
-    <h2>ブログへの返信</h2>
+    <h2>返信フォーム</h2>
 
-    <div id="blogInfo" class="box"></div>
+    <button onclick="location.href='mypage.html'">マイページへ戻る</button>
+    <button onclick="logout()">ログアウト</button>
 
-    <div class="box">
-        <h3>返信フォーム</h3>
+    <div class="section">
+        <h3>返信内容</h3>
 
-        <label>返信ファイル：</label>
-        <input type="file" id="replyFile">
+        <textarea id="replyContent" placeholder="返信内容を入力してください"></textarea>
 
-        <label>コメント：</label>
-        <textarea id="replyComment" rows="4"></textarea>
-
-        <button id="sendBtn">送信</button>
-
-        <div id="msg" class="msg"></div>
+        <button id="replyBtn">送信</button>
+        <div id="replyMsg" class="msg"></div>
     </div>
 
-    <button onclick="location.href='mypage.html'">マイページに戻る</button>
-
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
-
-        const CLOUD_NAME = "dnwfurr5m";
-        const UPLOAD_PRESET = "zyouhou";
-
-        function fixPdfUrl(url) {
-            if (!url.toLowerCase().endsWith(".pdf")) return url;
-            return url.replace(/\/image\/upload\/[^/]*\//, "/raw/upload/");
-        }
+        const API_URL = "https://script.google.com/macros/s/AKfycbwAiez7OoqLL6Gl0MaJeWT2s92HWOXgou88i5FOoLK6ic8HcNrc2-8z23kU_8N-D5M-mw/exec";
 
         const user = JSON.parse(sessionStorage.getItem("loginUser"));
         if (!user) location.href = "index.html";
 
-        const blogIndex = sessionStorage.getItem("replyBlogIndex");
-        if (!blogIndex) {
-            alert("ブログ情報がありません");
-            location.href = "mypage.html";
+        document.body.style.background = user.bgColor || "#ffffff";
+
+        function logout() {
+            sessionStorage.clear();
+            location.href = "index.html";
         }
 
-        fetch(API_URL, {
-            method: "POST",
-            body: new URLSearchParams({ action: "getBlogList" })
-        })
-            .then(res => res.json())
-            .then(list => {
-                const blog = list.find(b => b.index == blogIndex);
-                if (!blog) return;
+        document.getElementById("replyBtn").addEventListener("click", () => {
+            const content = document.getElementById("replyContent").value;
+            const msg = document.getElementById("replyMsg");
 
-                const fileLinks = (blog.files && blog.files.length > 0)
-                    ? blog.files.map(f => {
-                        const fixedUrl = fixPdfUrl(f.url);
-                        return `<a class="file-link" href="${fixedUrl}" target="_blank">📎 ${f.filename}</a>`;
-                    }).join("")
-                    : "（添付なし）";
-
-                document.getElementById("blogInfo").innerHTML = `
-                        <strong>${blog.title}</strong><br>
-                        <p>${blog.content}</p>
-                        <small>${blog.time}</small><br>
-                        <small>対象：${blog.target === "ALL" ? "全員" : blog.target}</small><br><br>
-                        <strong>添付ファイル：</strong><br>
-                        ${fileLinks}
-                    `;
-            });
-
-        document.getElementById("sendBtn").addEventListener("click", async () => {
-            const file = document.getElementById("replyFile").files[0];
-            const comment = document.getElementById("replyComment").value;
-            const msg = document.getElementById("msg");
-
-            if (!file && !comment) {
-                msg.textContent = "ファイルかコメントを入力してください。";
+            if (!content) {
+                msg.textContent = "返信内容を入力してください。";
+                msg.style.color = "red";
                 return;
             }
 
             msg.textContent = "送信中…";
-
-            let fileUrl = "";
-
-            if (file) {
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("upload_preset", UPLOAD_PRESET);
-
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const json = await res.json();
-                fileUrl = fixPdfUrl(json.secure_url);
-            }
+            msg.style.color = "black";
 
             fetch(API_URL, {
                 method: "POST",
                 body: new URLSearchParams({
-                    action: "saveReturnBox",
-                    id: user.id,
-                    fileUrl: fileUrl,
-                    comment: comment
+                    action: "postBlog",
+                    title: "返信",
+                    content: content,
+                    target: user.id,
+                    files: "[]"
                 })
             })
                 .then(res => res.json())
                 .then(() => {
-                    msg.textContent = "送信しました！";
-                    setTimeout(() => {
-                        location.href = "mypage.html";
-                    }, 1500);
+                    msg.textContent = "返信を送信しました！";
+                    msg.style.color = "green";
+                    document.getElementById("replyContent").value = "";
+                })
+                .catch(() => {
+                    msg.textContent = "通信エラーが発生しました。";
+                    msg.style.color = "red";
                 });
         });
     </script>

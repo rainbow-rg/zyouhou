@@ -10,9 +10,18 @@
             padding: 20px;
         }
 
-        input {
-            margin: 10px 0;
-            padding: 8px;
+        .section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        input[type="color"] {
+            width: 80px;
+            height: 40px;
+            padding: 0;
+            border: none;
         }
 
         button {
@@ -22,7 +31,6 @@
         .msg {
             margin-top: 10px;
             color: green;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -30,48 +38,68 @@
 
     <h2>設定</h2>
 
-    <div id="userInfo"></div>
-
-    <h3>背景色を変更</h3>
-    <input type="color" id="bgColor">
-    <button id="saveBtn">保存</button>
-    <div id="msg" class="msg"></div>
-
     <button onclick="location.href='mypage.html'">マイページへ戻る</button>
+    <button onclick="logout()">ログアウト</button>
+
+    <div class="section">
+        <h3>背景色の変更</h3>
+
+        <p>背景色：</p>
+        <input type="color" id="bgColorPicker">
+
+        <button id="saveBtn">保存</button>
+        <div id="saveMsg" class="msg"></div>
+    </div>
 
     <script>
-        const API_URL ="https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwAiez7OoqLL6Gl0MaJeWT2s92HWOXgou88i5FOoLK6ic8HcNrc2-8z23kU_8N-D5M-mw/exec";
 
         const user = JSON.parse(sessionStorage.getItem("loginUser"));
         if (!user) location.href = "index.html";
 
-        document.getElementById("userInfo").innerHTML = `
-                <p><strong>${user.name}</strong> さん</p>
-                <p>ID：${user.id}</p>
-            `;
+        document.body.style.background = user.bgColor || "#ffffff";
 
-        document.getElementById("bgColor").value = user.bgColor || "#ffffff";
+        document.getElementById("bgColorPicker").value = user.bgColor || "#ffffff";
+
+        function logout() {
+            sessionStorage.clear();
+            location.href = "index.html";
+        }
 
         document.getElementById("saveBtn").addEventListener("click", () => {
-            const color = document.getElementById("bgColor").value;
+            const newColor = document.getElementById("bgColorPicker").value;
+            const msg = document.getElementById("saveMsg");
+
+            msg.textContent = "保存中…";
+            msg.style.color = "black";
 
             fetch(API_URL, {
                 method: "POST",
                 body: new URLSearchParams({
                     action: "saveUserSetting",
                     id: user.id,
-                    bgcolor: color
+                    bgcolor: newColor
                 })
             })
                 .then(res => res.json())
-                .then(result => {
-                    if (result.ok) {
-                        user.bgColor = color;
-                        sessionStorage.setItem("loginUser", JSON.stringify(user));
-                        document.getElementById("msg").textContent = "保存しました！";
-                    } else {
-                        document.getElementById("msg").textContent = result.message;
+                .then(data => {
+                    if (!data.ok) {
+                        msg.textContent = "保存に失敗しました。";
+                        msg.style.color = "red";
+                        return;
                     }
+
+                    msg.textContent = "保存しました！";
+                    msg.style.color = "green";
+
+                    user.bgColor = newColor;
+                    sessionStorage.setItem("loginUser", JSON.stringify(user));
+
+                    document.body.style.background = newColor;
+                })
+                .catch(() => {
+                    msg.textContent = "通信エラーが発生しました。";
+                    msg.style.color = "red";
                 });
         });
     </script>

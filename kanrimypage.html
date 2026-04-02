@@ -4,601 +4,287 @@
     <meta charset="UTF-8">
     <title>管理者ページ</title>
 
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-
     <style>
         body {
             font-family: sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-            header h1 {
-                margin: 0;
-                font-size: 20px;
-            }
-
-        #adminName {
-            margin-right: 10px;
-        }
-
-        .logout-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .container {
             padding: 20px;
         }
 
         .section {
-            background: white;
-            padding: 20px;
+            background: #f5f5f5;
+            padding: 15px;
             margin-bottom: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        input, textarea, select {
+        table {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
             border: 1px solid #ccc;
-            border-radius: 6px;
+            padding: 8px;
+        }
+
+        th {
+            background: #eee;
         }
 
         button {
-            padding: 10px 18px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 6px 12px;
+            margin: 3px;
         }
 
         .msg {
             margin-top: 10px;
             color: green;
-            font-weight: bold;
         }
-
-        .user-card, .blog-item {
-            background: #fafafa;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .blog-delete-btn {
-            background: #e74c3c;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        table.history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-            table.history-table th, table.history-table td {
-                border: 1px solid #ddd;
-                padding: 6px 8px;
-            }
-
-            table.history-table th {
-                background: #f0f0f0;
-            }
-
-        .delete-file-btn {
-            background: #e74c3c;
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-
-        .file-item {
-            background: #eee;
-            padding: 6px;
-            margin: 4px 0;
-            border-radius: 4px;
-        }
-
-            .file-item button {
-                margin-left: 10px;
-                background: #e74c3c;
-                padding: 3px 6px;
-                font-size: 12px;
-            }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>管理者ページ</h1>
-        <div>
-            <span id="adminName"></span>
-            <button class="logout-btn" onclick="logout()">ログアウト</button>
-        </div>
-    </header>
+    <h2>管理者ページ</h2>
 
-    <div class="container">
+    <button onclick="logout()">ログアウト</button>
 
-        <div class="section">
-            <h2>ブログ投稿</h2>
+    <hr>
 
-            <label>送信対象：</label>
-            <select id="blogTargetMode">
-                <option value="all">全員</option>
-                <option value="one">個別</option>
-            </select>
+    <div class="section">
+        <h3>ユーザー一覧</h3>
+        <div id="userList"></div>
+    </div>
 
-            <select id="blogUserSelect" style="display:none;"></select>
+    <div class="section">
+        <h3>返却履歴</h3>
+        <div id="historyList"></div>
+    </div>
 
-            <input id="blogTitle" placeholder="タイトル">
-            <textarea id="blogContent" rows="4" placeholder="内容"></textarea>
+    <div class="section">
+        <h3>返却ファイル送信（管理者 → ユーザー）</h3>
 
-            <label>添付ファイル（複数可）：</label>
-            <input type="file" id="blogFileInput" multiple>
+        <label>対象ユーザー：</label>
+        <select id="targetUser"></select>
 
-            <div id="blogFileList"></div>
+        <br><br>
 
-            <button id="postBlogBtn">投稿</button>
+        <input type="file" id="adminFile">
+        <input type="text" id="adminFilename" placeholder="ファイル名（任意）">
 
-            <div id="blogMsg" class="msg"></div>
-
-            <h3>投稿記録（最新10件）</h3>
-            <div id="blogList"></div>
-        </div>
-        <div class="section">
-            <h2>ファイル転送（管理者 → ユーザー）</h2>
-
-            <label>返信対象：</label>
-            <select id="replyTargetSelect">
-                <option value="">（返信対象を選択）</option>
-            </select>
-
-            <label>送信先：</label>
-            <select id="sendMode">
-                <option value="one">個別</option>
-                <option value="all">全員</option>
-            </select>
-
-            <select id="userSelect"></select>
-
-            <input type="file" id="adminFileInput">
-            <button id="adminUploadBtn">送信</button>
-
-            <div id="adminUploadMsg" class="msg"></div>
-
-            <h3>送信履歴</h3>
-            <div id="fileHistory"></div>
-        </div>
-
-        <div class="section">
-            <h2>ユーザー一覧</h2>
-            <div id="userList"></div>
-        </div>
-
+        <button id="adminSendBtn">送信</button>
+        <div id="adminSendMsg" class="msg"></div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwAiez7OoqLL6Gl0MaJeWT2s92HWOXgou88i5FOoLK6ic8HcNrc2-8z23kU_8N-D5M-mw/exec";
 
-        const CLOUD_NAME = "dnwfurr5m";
-        const UPLOAD_PRESET = "zyouhou";
-
-        function fixPdfUrl(url) {
-            if (!url.toLowerCase().endsWith(".pdf")) return url;
-            return url.replace(/\/image\/upload\/[^/]*\//, "/raw/upload/");
-        }
-
-        const admin = JSON.parse(sessionStorage.getItem("loginUser"));
-        if (!admin || admin.role !== "admin") {
-            alert("管理者のみアクセスできます");
-            location.href = "index.html";
-        }
-        document.getElementById("adminName").textContent = `ID: ${admin.id}`;
+        const user = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!user || user.role !== "admin") location.href = "index.html";
 
         function logout() {
             sessionStorage.clear();
-            history.replaceState(null, "", "index.html");
             location.href = "index.html";
         }
 
-        function linkify(text) {
-            const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
-            return text.replace(urlPattern, url => {
-                let href = url;
-                if (!href.startsWith("http")) href = "http://" + href;
-                return `<a href="${href}" target="_blank">${url}</a>`;
-            });
+        /* ▼▼▼ Part 2：ユーザー一覧・返却履歴の読み込み ▼▼▼ */
+
+        // ===============================
+        // ユーザー一覧の読み込み
+        // ===============================
+        function loadUserList() {
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({ action: "getUserList" })
+            })
+                .then(res => res.json())
+                .then(list => {
+                    const area = document.getElementById("userList");
+                    const select = document.getElementById("targetUser");
+
+                    area.innerHTML = "";
+                    select.innerHTML = "";
+
+                    // 「ALL」を追加
+                    const optAll = document.createElement("option");
+                    optAll.value = "ALL";
+                    optAll.textContent = "全員に送信";
+                    select.appendChild(optAll);
+
+                    if (!list || list.length === 0) {
+                        area.textContent = "ユーザーがいません。";
+                        return;
+                    }
+
+                    let html = "<table><tr><th>ID</th><th>名前</th><th>メール</th></tr>";
+
+                    list.forEach(u => {
+                        html += `
+                            <tr>
+                                <td>${u.id}</td>
+                                <td>${u.name}</td>
+                                <td>${u.mail}</td>
+                            </tr>
+                        `;
+
+                        const opt = document.createElement("option");
+                        opt.value = u.id;
+                        opt.textContent = `${u.name}（${u.id}）`;
+                        select.appendChild(opt);
+                    });
+
+                    html += "</table>";
+                    area.innerHTML = html;
+                });
         }
 
-        let blogFiles = [];
+        // ===============================
+        // 返却履歴の読み込み
+        // ===============================
+        function loadHistory() {
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({ action: "getReturnHistory" })
+            })
+                .then(res => res.json())
+                .then(list => {
+                    const area = document.getElementById("historyList");
+                    area.innerHTML = "";
 
-        document.getElementById("blogFileInput").addEventListener("change", (e) => {
-            const files = Array.from(e.target.files);
-            blogFiles = blogFiles.concat(files);
-            renderBlogFileList();
-        });
+                    if (!list || list.length === 0) {
+                        area.textContent = "返却履歴がありません。";
+                        return;
+                    }
 
-        function renderBlogFileList() {
-            const area = document.getElementById("blogFileList");
-            area.innerHTML = "";
-            blogFiles.forEach((file, index) => {
-                const div = document.createElement("div");
-                div.className = "file-item";
-                div.innerHTML = `${file.name} <button onclick="removeBlogFile(${index})">削除</button>`;
-                area.appendChild(div);
-            });
+                    let html = `
+                        <table>
+                            <tr>
+                                <th>日時</th>
+                                <th>送信者</th>
+                                <th>受信者</th>
+                                <th>ファイル</th>
+                                <th>コメント</th>
+                                <th>削除</th>
+                            </tr>
+                    `;
+
+                    list.forEach(item => {
+                        const fileLink = item.file_url
+                            ? `<a href="${item.file_url}" target="_blank">📎 ファイル</a>`
+                            : "なし";
+
+                        html += `
+                            <tr>
+                                <td>${item.time}</td>
+                                <td>${item.sender}</td>
+                                <td>${item.receiver}</td>
+                                <td>${fileLink}</td>
+                                <td>${item.comment || ""}</td>
+                                <td>
+                                    <button onclick="deleteHistory(${item.rowIndex}, '${item.public_id}')">
+                                        削除
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += "</table>";
+                    area.innerHTML = html;
+                });
+        }
+// ===============================
+// 管理者 → ユーザー返却送信
+// ===============================
+document.getElementById("adminSendBtn").addEventListener("click", async () => {
+        const target = document.getElementById("targetUser").value;
+                const file = document.getElementById("adminFile").files[0];
+                const filename = document.getElementById("adminFilename").value;
+                const msg = document.getElementById("adminSendMsg");
+
+                if (!file) {
+                    msg.textContent = "ファイルを選択してください。";
+                msg.style.color = "red";
+                return;
         }
 
-        function removeBlogFile(index) {
-            blogFiles.splice(index, 1);
-            renderBlogFileList();
-        }
+                msg.textContent = "アップロード中…";
+                msg.style.color = "black";
 
-        document.getElementById("postBlogBtn").addEventListener("click", async () => {
-            const btn = document.getElementById("postBlogBtn");
-            btn.disabled = true;
-            btn.textContent = "投稿中…";
+                // Cloudinary 設定
+                const CLOUD_NAME = "dnwfurr5m";
+                const UPLOAD_PRESET = "zyouhou";
 
-            const title = document.getElementById("blogTitle").value;
-            const content = document.getElementById("blogContent").value;
-            const mode = document.getElementById("blogTargetMode").value;
-            const userId = document.getElementById("blogUserSelect").value || "";
-            const target = (mode === "all") ? "ALL" : userId;
-
-            let uploadedFiles = [];
-
-            for (const file of blogFiles) {
                 const formData = new FormData();
                 formData.append("file", file);
                 formData.append("upload_preset", UPLOAD_PRESET);
 
+                // Cloudinary アップロード
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
                     method: "POST",
-                    body: formData
-                });
+                body: formData
+        });
                 const json = await res.json();
 
-                uploadedFiles.push({
-                    url: fixPdfUrl(json.secure_url),
-                    public_id: json.public_id,
-                    filename: json.original_filename || file.name
-                });
-            }
+                const fileUrl = fixPdfUrl(json.secure_url);
+                const publicId = json.public_id;
 
-            fetch(API_URL, {
-                method: "POST",
+                // GAS へ送信
+                fetch(API_URL, {
+                    method: "POST",
                 body: new URLSearchParams({
-                    action: "postBlog",
-                    title,
-                    content,
-                    target,
-                    files: JSON.stringify(uploadedFiles)
-                })
+                    action: "adminReturnFile",
+                userId: target,
+                fileUrl: fileUrl,
+                publicId: publicId,
+                filename: filename,
+                senderId: user.id,
+                replyToUUID: ""
             })
-                .then(res => res.json())
-                .then(() => {
-                    document.getElementById("blogMsg").textContent = "投稿しました！";
-                    setTimeout(() => document.getElementById("blogMsg").textContent = "", 10000);
-
-                    document.getElementById("blogTitle").value = "";
-                    document.getElementById("blogContent").value = "";
-                    document.getElementById("blogFileInput").value = "";
-                    blogFiles = [];
-                    renderBlogFileList();
-
-                    btn.disabled = false;
-                    btn.textContent = "投稿";
-
-                    loadBlogList();
-                });
-        });
-
-        function deleteBlog(index) {
-            if (!confirm("この投稿を削除しますか？")) return;
-
-            fetch(API_URL, {
-                method: "POST",
-                body: new URLSearchParams({ action: "deleteBlog", index })
-            })
-                .then(res => res.json())
-                .then(() => {
-                    document.getElementById("blogMsg").textContent = "削除しました！";
-                    setTimeout(() => document.getElementById("blogMsg").textContent = "", 10000);
-                    loadBlogList();
-                });
-        }
-
-        function loadBlogList() {
-            fetch(API_URL, {
-                method: "POST",
-                body: new URLSearchParams({ action: "getBlogList" })
-            })
-                .then(res => res.json())
-                .then(list => {
-                    const area = document.getElementById("blogList");
-                    area.innerHTML = "";
-
-                    list.slice(0, 10).forEach(item => {
-                        const div = document.createElement("div");
-                        div.className = "blog-item";
-
-                        const fileLinks = item.files.map(f => {
-                            const fixedUrl = fixPdfUrl(f.url);
-                            return `<a href="${fixedUrl}" target="_blank">📎 ${f.filename}</a>`;
-                        }).join("<br>");
-
-                        div.innerHTML = `
-                            <strong>${item.title}</strong><br>
-                            ${linkify(item.content)}<br>
-                            <small>${item.time}</small><br>
-                            ${fileLinks}<br>
-                            <button class="blog-delete-btn" onclick="deleteBlog(${item.index})">削除</button>
-                        `;
-                        area.appendChild(div);
-                    });
-                });
-        }
-        loadBlogList();
-
-        fetch(API_URL, {
-            method: "POST",
-            body: new URLSearchParams({ action: "getUserList" })
         })
             .then(res => res.json())
-            .then(list => {
-                const area = document.getElementById("userList");
-                const select = document.getElementById("userSelect");
-                const blogSelect = document.getElementById("blogUserSelect");
-
-                list.forEach(u => {
-                    const div = document.createElement("div");
-                    div.className = "user-card";
-                    div.innerHTML = `
-                        <strong>ID：</strong> ${u.id}<br>
-                        <strong>名前：</strong> ${u.name}<br>
-                        <strong>メール：</strong> ${u.mail}<br>
-                        <button onclick="openUserMypage('${u.id}','${u.name}','${u.mail}')">マイページを見る</button>
-                    `;
-                    area.appendChild(div);
-
-                    const opt = document.createElement("option");
-                    opt.value = u.id;
-                    opt.textContent = `${u.id} (${u.name})`;
-                    select.appendChild(opt);
-
-                    const opt2 = document.createElement("option");
-                    opt2.value = u.id;
-                    opt2.textContent = `${u.id} (${u.name})`;
-                    blogSelect.appendChild(opt2);
-                });
-            });
-        document.getElementById("adminUploadBtn").addEventListener("click", async () => {
-            const file = document.getElementById("adminFileInput").files[0];
-            const mode = document.getElementById("sendMode").value;
-            const userId = document.getElementById("userSelect").value;
-            const replyToUUID = document.getElementById("replyTargetSelect").value;
-            const msg = document.getElementById("adminUploadMsg");
-
-            if (!file) {
-                msg.textContent = "ファイルを選択してください。";
-                setTimeout(() => msg.textContent = "", 10000);
-                return;
-            }
-
-            if (mode === "one" && !userId) {
-                msg.textContent = "送信先ユーザーを選択してください。";
-                setTimeout(() => msg.textContent = "", 10000);
-                return;
-            }
-
-            msg.textContent = "アップロード中…";
-
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", UPLOAD_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                method: "POST",
-                body: formData
-            });
-            const json = await res.json();
-
-            const fileUrl = fixPdfUrl(json.secure_url);
-            const publicId = json.public_id;
-            const filename = json.original_filename || file.name;
-            const target = (mode === "all") ? "ALL" : userId;
-
-            const params = new URLSearchParams({
-                action: "adminReturnFile",
-                userId: target,
-                fileUrl,
-                publicId,
-                filename,
-                senderId: admin.id,
-                replyToUUID
-            });
-
-            fetch(API_URL, {
-                method: "POST",
-                body: params
-            })
-                .then(res => res.json())
-                .then(() => {
+            .then(() => {
                     msg.textContent = "送信しました！";
-                    setTimeout(() => msg.textContent = "", 10000);
-                    document.getElementById("adminFileInput").value = "";
-                    loadFileHistory();
-                    loadReplyTargets();
-                });
-        });
+                msg.style.color = "green";
 
-        function loadReplyTargets() {
-            fetch(API_URL, {
-                method: "POST",
-                body: new URLSearchParams({ action: "getReturnHistory" })
-            })
-                .then(res => res.json())
-                .then(list => {
-                    const select = document.getElementById("replyTargetSelect");
-                    select.innerHTML = `<option value="">（返信対象を選択）</option>`;
+                document.getElementById("adminFile").value = "";
+                document.getElementById("adminFilename").value = "";
 
-                    list.forEach(item => {
-                        if (item.receiver === "ADMIN" && item.file_url) {
-                            const opt = document.createElement("option");
-                            opt.value = item.reply_toUUID;   // UUID を value にする
-                            opt.dataset.user = item.sender;
-                            opt.textContent = `${item.sender}：${item.filename || "ファイル名なし"}`;
-                            select.appendChild(opt);
-                        }
-                    });
-                });
-        }
-        loadReplyTargets();
+                loadHistory();
+            });
+});
 
-        document.getElementById("replyTargetSelect").addEventListener("change", (e) => {
-            const selected = e.target.selectedOptions[0];
-            if (!selected || !selected.value) return;
+                // PDF の URL 修正（raw 化）
+                function fixPdfUrl(url) {
+        if (!url.toLowerCase().endsWith(".pdf")) return url;
+                return url.replace(/\/image\/upload\/[^/]*\//, "/raw/upload/");
+}
 
-            const userId = selected.dataset.user;
+                // ===============================
+                // 返却履歴の削除
+                // ===============================
+                function deleteHistory(rowIndex, publicId) {
+        if (!confirm("本当に削除しますか？")) return;
 
-            document.getElementById("sendMode").value = "one";
-            document.getElementById("userSelect").style.display = "block";
-            document.getElementById("userSelect").value = userId;
-        });
-
-        function loadFileHistory() {
-            fetch(API_URL, {
-                method: "POST",
-                body: new URLSearchParams({ action: "getReturnHistory" })
-            })
-                .then(res => res.json())
-                .then(list => {
-                    const area = document.getElementById("fileHistory");
-                    area.innerHTML = "";
-
-                    if (!list || list.length === 0) {
-                        area.textContent = "履歴はまだありません。";
-                        return;
-                    }
-
-                    const table = document.createElement("table");
-                    table.className = "history-table";
-                    table.innerHTML = `
-                    <tr>
-                        <th>日時</th>
-                        <th>送信者</th>
-                        <th>送信先</th>
-                        <th>ファイル名</th>
-                        <th>リンク</th>
-                        <th>返信元UUID</th>
-                        <th>操作</th>
-                    </tr>
-                `;
-
-                    list.forEach(item => {
-                        const fixedUrl = item.file_url ? fixPdfUrl(item.file_url) : "";
-
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                        <td>${item.time}</td>
-                        <td>${item.sender}</td>
-                        <td>${item.receiver}</td>
-                        <td>${item.filename || ""}</td>
-                        <td>${item.file_url ? `<a href="${fixedUrl}" target="_blank">開く</a>` : ""}</td>
-                        <td>${item.reply_toUUID || ""}</td>
-                        <td>
-                            <button class="delete-file-btn"
-                                onclick="deleteFile(${item.rowIndex}, '${item.public_id || ""}')">
-                                削除
-                            </button>
-                        </td>
-                    `;
-                        table.appendChild(tr);
-                    });
-
-                    area.appendChild(table);
-                });
-        }
-        loadFileHistory();
-
-        function deleteFile(rowIndex, publicId) {
-            if (!confirm("このファイルを削除します（履歴と実ファイルが削除されます）")) return;
-
-            fetch(API_URL, {
-                method: "POST",
+                fetch(API_URL, {
+                    method: "POST",
                 body: new URLSearchParams({
                     action: "deleteReturnFile",
-                    rowIndex: rowIndex,
-                    publicId: publicId
-                })
+                rowIndex: rowIndex,
+                publicId: publicId
             })
-                .then(res => res.json())
-                .then(result => {
-                    if (!result.ok) {
-                        alert("削除に失敗しました。" + (result.message || ""));
-                        return;
-                    }
-                    loadFileHistory();
-                    loadReplyTargets();
-                });
-        }
+        })
+            .then(res => res.json())
+            .then(() => {
+                    loadHistory();
+            });
+}
 
-        function openUserMypage(id, name, mail) {
-            const user = {
-                id: id,
-                name: name,
-                mail: mail,
-                role: "user",
-                bgColor: "#ffffff"
-            };
-            sessionStorage.setItem("loginUser", JSON.stringify(user));
-            window.open("mypage.html", "_blank");
-        }
-
-        function setupTargetToggles() {
-            const sendMode = document.getElementById("sendMode");
-            const userSelect = document.getElementById("userSelect");
-            const blogMode = document.getElementById("blogTargetMode");
-            const blogUserSelect = document.getElementById("blogUserSelect");
-
-            function updateFileTarget() {
-                userSelect.style.display = (sendMode.value === "all") ? "none" : "block";
-            }
-
-            function updateBlogTarget() {
-                blogUserSelect.style.display = (blogMode.value === "all") ? "none" : "block";
-            }
-
-            sendMode.addEventListener("change", updateFileTarget);
-            blogMode.addEventListener("change", updateBlogTarget);
-
-            updateFileTarget();
-            updateBlogTarget();
-        }
-
-        setupTargetToggles();
+                // ===============================
+                // 初期ロード
+                // ===============================
+                loadUserList();
+                loadHistory();
     </script>
 
 </body>
