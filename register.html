@@ -6,42 +6,101 @@
     <style>
         body {
             font-family: sans-serif;
-            padding: 20px;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .register-container {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 340px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
         }
 
         input {
-            display: block;
-            margin: 10px 0;
-            padding: 8px;
-            width: 250px;
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
         }
 
-        button {
-            padding: 8px 15px;
+        #registerBtn {
+            display: block;
+            margin: 0 auto;
+            padding: 12px 32px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+            #registerBtn:hover {
+                background: #3b7ac4;
+            }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+        .msg {
+            text-align: center;
+            margin-top: 10px;
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <h2>新規登録</h2>
+    <div class="register-container">
+        <h2>新規登録</h2>
 
-    <input id="name" placeholder="名前">
-    <input id="mail" placeholder="メールアドレス">
-    <input id="id" placeholder="ユーザーID">
-    <input id="pass" type="password" placeholder="パスワード">
+        <input id="name" placeholder="名前">
+        <input id="mail" placeholder="メールアドレス">
+        <input id="id" placeholder="ユーザーID">
+        <input id="pass" type="password" placeholder="パスワード（8文字以上）">
 
-    <button id="registerBtn">登録</button>
+        <button id="registerBtn">登録</button>
 
-    <p><a href="index.html">ログインページへ戻る</a></p>
+        <div id="msg" class="msg"></div>
+
+        <a href="index.html">ログインページへ戻る</a>
+    </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycby4-6hhp06yWlhnEHVJVakubswm9_fVFzGiCvRMH2c-SqsBQIZuU1XjEgH6eCAU5q9A9Q/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
 
         document.getElementById("registerBtn").addEventListener("click", () => {
             const name = document.getElementById("name").value;
             const mail = document.getElementById("mail").value;
             const id = document.getElementById("id").value;
             const pass = document.getElementById("pass").value;
+            const msg = document.getElementById("msg");
+
+            msg.textContent = "";
 
             fetch(API_URL, {
                 method: "POST",
@@ -59,7 +118,7 @@
                         alert("登録が完了しました！");
                         location.href = "index.html";
                     } else {
-                        alert(result.message);
+                        msg.textContent = result.message;
                     }
                 });
         });

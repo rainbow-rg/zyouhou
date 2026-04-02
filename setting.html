@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>設定</title>
+
     <style>
         body {
             font-family: sans-serif;
@@ -17,6 +18,12 @@
         button {
             padding: 8px 15px;
         }
+
+        .msg {
+            margin-top: 10px;
+            color: green;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -28,47 +35,46 @@
     <h3>背景色を変更</h3>
     <input type="color" id="bgColor">
     <button id="saveBtn">保存</button>
-    <div id="msg"></div>
+    <div id="msg" class="msg"></div>
 
     <button onclick="location.href='mypage.html'">マイページへ戻る</button>
 
-    <script>const API_URL = "https://script.google.com/macros/s/AKfycby4-6hhp06yWlhnEHVJVakubswm9_fVFzGiCvRMH2c-SqsBQIZuU1XjEgH6eCAU5q9A9Q/exec";
+    <script>
+        const API_URL ="https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
 
-  // ログインチェック
-  const user = JSON.parse(sessionStorage.getItem("loginUser"));
-  if (!user) location.href = "index.html";
+        const user = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!user) location.href = "index.html";
 
-  document.getElementById("userInfo").innerHTML = `
-    <p><strong>${user.name}</strong> さん</p>
-    <p>ID：${user.id}</p>
-  `;
+        document.getElementById("userInfo").innerHTML = `
+                <p><strong>${user.name}</strong> さん</p>
+                <p>ID：${user.id}</p>
+            `;
 
-  // 現在の背景色を初期値に
-  document.getElementById("bgColor").value = user.bgColor || "#ffffff";
+        document.getElementById("bgColor").value = user.bgColor || "#ffffff";
 
-  // 保存処理
-  document.getElementById("saveBtn").addEventListener("click", () => {
-    const color = document.getElementById("bgColor").value;
+        document.getElementById("saveBtn").addEventListener("click", () => {
+            const color = document.getElementById("bgColor").value;
 
-    fetch(API_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        action: "saveUserSetting",
-        id: user.id,
-        bgcolor: color
-      })
-    })
-      .then(res => res.json())
-      .then(result => {
-        if (result.ok) {
-          user.bgColor = color;
-          sessionStorage.setItem("loginUser", JSON.stringify(user));
-          document.getElementById("msg").textContent = "保存しました！";
-        } else {
-          document.getElementById("msg").textContent = result.message;
-        }
-      });
-  });</script>
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "saveUserSetting",
+                    id: user.id,
+                    bgcolor: color
+                })
+            })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.ok) {
+                        user.bgColor = color;
+                        sessionStorage.setItem("loginUser", JSON.stringify(user));
+                        document.getElementById("msg").textContent = "保存しました！";
+                    } else {
+                        document.getElementById("msg").textContent = result.message;
+                    }
+                });
+        });
+    </script>
 
 </body>
 </html>

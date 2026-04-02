@@ -28,6 +28,11 @@
             display: block;
             margin: 5px 0;
         }
+
+        .return-title {
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -47,24 +52,25 @@
     <div id="returnBox"></div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycby4-6hhp06yWlhnEHVJVakubswm9_fVFzGiCvRMH2c-SqsBQIZuU1XjEgH6eCAU5q9A9Q/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
 
-        // ★ ログイン情報
+        function fixPdfUrl(url) {
+            if (!url.toLowerCase().endsWith(".pdf")) return url;
+            return url.replace(/\/image\/upload\/[^/]*\//, "/raw/upload/");
+        }
+
         const user = JSON.parse(sessionStorage.getItem("loginUser"));
         if (!user) location.href = "index.html";
 
-        // ユーザー情報
         document.getElementById("userInfo").innerHTML = `
-            <p><strong>${user.name}</strong> さん</p>
-            <p>ID：${user.id}</p>
-        `;
+                <p><strong>${user.name}</strong> さん</p>
+                <p>ID：${user.id}</p>
+            `;
 
-        // 背景色
         if (user.bgColor) {
             document.body.style.background = user.bgColor;
         }
 
-        // 管理者ボタン
         if (user.role === "admin") {
             const btn = document.createElement("button");
             btn.textContent = "管理者ページへ";
@@ -72,17 +78,15 @@
             document.body.insertBefore(btn, document.getElementById("logoutBtn"));
         }
 
-        // ★ URL をリンク化
         function linkify(text) {
             const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
-            return text.replace(urlPattern, function (url) {
+            return text.replace(urlPattern, url => {
                 let href = url;
                 if (!href.startsWith("http")) href = "http://" + href;
                 return `<a href="${href}" target="_blank">${url}</a>`;
             });
         }
 
-        // ★ ブログ一覧
         fetch(API_URL, {
             method: "POST",
             body: new URLSearchParams({ action: "getBlogList" })
@@ -95,23 +99,32 @@
                 list.forEach(item => {
                     const div = document.createElement("div");
                     div.className = "blog-box";
+
+                    const fileLinks = (item.files && item.files.length > 0)
+                        ? item.files.map(f => {
+                            const fixedUrl = fixPdfUrl(f.url);
+                            return `<a class="file-link" href="${fixedUrl}" target="_blank">📎 ${f.filename}</a>`;
+                        }).join("")
+                        : "（添付なし）";
+
                     div.innerHTML = `
-                    <strong>${item.title}</strong><br>
-                    <p>${linkify(item.content)}</p>
-                    <small>${item.date}</small><br>
-                    <button onclick="replyBlog('${item.index}')">返信する</button>
-                `;
+                            <strong>${item.title}</strong><br>
+                            <p>${linkify(item.content)}</p>
+                            <small>${item.time}</small><br>
+                            <small>対象：${item.target === "ALL" ? "全員" : item.target}</small><br><br>
+                            <strong>添付ファイル：</strong><br>
+                            ${fileLinks}<br><br>
+                            <button onclick="replyBlog('${item.index}')">返信する</button>
+                        `;
                     area.appendChild(div);
                 });
             });
 
-        // ★ 返信ページへ
         function replyBlog(index) {
             sessionStorage.setItem("replyBlogIndex", index);
             location.href = "reply.html";
         }
 
-        // ★ 返却ボックス
         fetch(API_URL, {
             method: "POST",
             body: new URLSearchParams({
@@ -124,30 +137,42 @@
                 const area = document.getElementById("returnBox");
                 area.innerHTML = "";
 
+                if (!list || list.length === 0) {
+                    area.textContent = "返却はまだありません。";
+                    return;
+                }
+
                 list.forEach(item => {
                     const div = document.createElement("div");
                     div.className = "return-box";
 
+                    const userFile = item.user_to_admin
+                        ? `<a class="file-link" href="${fixPdfUrl(item.user_to_admin)}" target="_blank">📎 あなたの送信ファイル</a>`
+                        : "なし";
+
+                    const adminFile = item.admin_to_user
+                        ? `<a class="file-link" href="${fixPdfUrl(item.admin_to_user)}" target="_blank">📎 ${item.admin_filename}</a>`
+                        : "（まだ返却されていません）";
+
                     div.innerHTML = `
-                    <strong>送信ファイル：</strong>
-                    ${item.user_to_admin ? `<a class="file-link" href="${item.user_to_admin}" target="_blank">開く</a>` : "なし"}<br>
+                            <div class="return-title">あなたの送信：</div>
+                            ${userFile}
+                            <small>${item.updated_at}</small><br>
+                            <small>コメント：${item.comment || "なし"}</small>
 
-                    <strong>返却ファイル：</strong>
-                    ${item.admin_to_user ? `<a class="file-link" href="${item.admin_to_user}" target="_blank">開く</a>` : "なし"}<br>
-
-                    <strong>返信日時：</strong> ${item.updated_at}<br>
-                `;
+                            <div class="return-title" style="margin-top:10px;">管理者からの返却：</div>
+                            ${adminFile}
+                            ${item.admin_time ? `<br><small>${item.admin_time}</small>` : ""}
+                        `;
 
                     area.appendChild(div);
                 });
             });
 
-        // ログアウト
         document.getElementById("logoutBtn").addEventListener("click", () => {
             sessionStorage.removeItem("loginUser");
             location.href = "index.html";
         });
-
     </script>
 
 </body>

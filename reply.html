@@ -40,6 +40,11 @@
             color: green;
             font-weight: bold;
         }
+
+        .file-link {
+            display: block;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -64,88 +69,98 @@
 
     <button onclick="location.href='mypage.html'">マイページに戻る</button>
 
-    <script>const API_URL = "https://script.google.com/macros/s/AKfycby4-6hhp06yWlhnEHVJVakubswm9_fVFzGiCvRMH2c-SqsBQIZuU1XjEgH6eCAU5q9A9Q/exec";
-    const CLOUD_NAME = "dnwfurr5m";
-    const UPLOAD_PRESET = "zyouhou";
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxjhCAmP1wXOfDbcRcPLsQEK0RJdwpz_peyAIkQHGFxSz_rDj9NQNcsuM8b_NqkHf1ebw/exec";
 
-    // ★ ログイン情報
-    const user = JSON.parse(sessionStorage.getItem("loginUser"));
-    if (!user) location.href = "index.html";
+        const CLOUD_NAME = "dnwfurr5m";
+        const UPLOAD_PRESET = "zyouhou";
 
-    // ★ 管理者ページから渡されたブログ番号
-    const blogIndex = sessionStorage.getItem("replyBlogIndex");
-    if (!blogIndex) {
-        alert("ブログ情報がありません");
-        location.href = "mypage.html";
-    }
-
-    // ★ ブログ内容を取得して表示
-    fetch(API_URL, {
-        method: "POST",
-        body: new URLSearchParams({ action: "getBlogList" })
-    })
-    .then(res => res.json())
-    .then(list => {
-        const blog = list.find(b => b.index == blogIndex);
-        if (!blog) return;
-
-        document.getElementById("blogInfo").innerHTML = `
-            <strong>${blog.title}</strong><br>
-            <p>${blog.content}</p>
-            <small>${blog.date}</small><br>
-            <small>対象：${blog.target === "ALL" ? "全員" : blog.target}</small>
-        `;
-    });
-
-    // ★ 返信送信
-    document.getElementById("sendBtn").addEventListener("click", async () => {
-        const file = document.getElementById("replyFile").files[0];
-        const comment = document.getElementById("replyComment").value;
-        const msg = document.getElementById("msg");
-
-        if (!file && !comment) {
-            msg.textContent = "ファイルかコメントを入力してください。";
-            return;
+        function fixPdfUrl(url) {
+            if (!url.toLowerCase().endsWith(".pdf")) return url;
+            return url.replace(/\/image\/upload\/[^/]*\//, "/raw/upload/");
         }
 
-        msg.textContent = "送信中…";
+        const user = JSON.parse(sessionStorage.getItem("loginUser"));
+        if (!user) location.href = "index.html";
 
-        let fileUrl = "";
-
-        // ★ ファイルがある場合は Cloudinary にアップロード
-        if (file) {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", UPLOAD_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                method: "POST",
-                body: formData
-            });
-
-            const json = await res.json();
-            fileUrl = json.secure_url;
+        const blogIndex = sessionStorage.getItem("replyBlogIndex");
+        if (!blogIndex) {
+            alert("ブログ情報がありません");
+            location.href = "mypage.html";
         }
 
-        // ★ GAS に送信（ユーザー → 管理者）
         fetch(API_URL, {
             method: "POST",
-            body: new URLSearchParams({
-                action: "saveReturnBox",
-                id: user.id,
-                fileUrl: fileUrl,
-                comment: comment
-            })
+            body: new URLSearchParams({ action: "getBlogList" })
         })
-        .then(res => res.json())
-        .then(() => {
-            msg.textContent = "送信しました！";
+            .then(res => res.json())
+            .then(list => {
+                const blog = list.find(b => b.index == blogIndex);
+                if (!blog) return;
 
-            setTimeout(() => {
-                location.href = "mypage.html";
-            }, 1500);
+                const fileLinks = (blog.files && blog.files.length > 0)
+                    ? blog.files.map(f => {
+                        const fixedUrl = fixPdfUrl(f.url);
+                        return `<a class="file-link" href="${fixedUrl}" target="_blank">📎 ${f.filename}</a>`;
+                    }).join("")
+                    : "（添付なし）";
+
+                document.getElementById("blogInfo").innerHTML = `
+                        <strong>${blog.title}</strong><br>
+                        <p>${blog.content}</p>
+                        <small>${blog.time}</small><br>
+                        <small>対象：${blog.target === "ALL" ? "全員" : blog.target}</small><br><br>
+                        <strong>添付ファイル：</strong><br>
+                        ${fileLinks}
+                    `;
+            });
+
+        document.getElementById("sendBtn").addEventListener("click", async () => {
+            const file = document.getElementById("replyFile").files[0];
+            const comment = document.getElementById("replyComment").value;
+            const msg = document.getElementById("msg");
+
+            if (!file && !comment) {
+                msg.textContent = "ファイルかコメントを入力してください。";
+                return;
+            }
+
+            msg.textContent = "送信中…";
+
+            let fileUrl = "";
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("upload_preset", UPLOAD_PRESET);
+
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const json = await res.json();
+                fileUrl = fixPdfUrl(json.secure_url);
+            }
+
+            fetch(API_URL, {
+                method: "POST",
+                body: new URLSearchParams({
+                    action: "saveReturnBox",
+                    id: user.id,
+                    fileUrl: fileUrl,
+                    comment: comment
+                })
+            })
+                .then(res => res.json())
+                .then(() => {
+                    msg.textContent = "送信しました！";
+                    setTimeout(() => {
+                        location.href = "mypage.html";
+                    }, 1500);
+                });
         });
-    });</script>
+    </script>
 
 </body>
 </html>
